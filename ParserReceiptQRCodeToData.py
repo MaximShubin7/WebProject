@@ -1,7 +1,7 @@
 from typing import Optional
-from pyzbar.pyzbar import decode
-from PIL import Image
+import numpy as np
 import requests
+import cv2
 
 from ConnectDataBase import get_db_connection
 from QRCode import QRCodesTable
@@ -93,11 +93,11 @@ class ParserReceiptQRCodeToData:
         response = requests.get(url, headers=headers)
         return response.json()["ticket"]
 
-    def decode_qr_code(self, image: Image) -> Optional[str]:
+    def decode_qr_code(self, image_np: np.ndarray) -> Optional[str]:
         try:
-            decoded_objects = decode(image)
-            for obj in decoded_objects:
-                return obj.data.decode("utf-8")
+            detector = cv2.QRCodeDetector()
+            data, _, _ = detector.detectAndDecode(image_np)
+            return data
         except Exception as e:
             print(f"Ошибка: {e}")
 
@@ -107,14 +107,14 @@ class UseParserReceipt:
         client = ParserReceiptQRCodeToData()
         client.set_session_id(user.phone_number)
 
-    def add_bonus(self, user: UserResponse, code: str, qr_code_image: Image):
+    def add_bonus(self, user: UserResponse, code: str, image_np: np.ndarray):
         try:
             client = ParserReceiptQRCodeToData()
             client.verify_session_id(user.phone_number, code)
         except Exception:
             raise ValueError("Invalid code")
         try:
-            qr_code_data = client.decode_qr_code(qr_code_image)
+            qr_code_data = client.decode_qr_code(image_np)
             repository = QRCodesTable(get_db_connection())
             if repository.get_qr_code(qr_code_data) is not None:
                 raise ValueError("The QR code has already been read")

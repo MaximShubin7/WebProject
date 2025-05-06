@@ -8,11 +8,13 @@ colorama==0.4.6
 dnspython==2.7.0
 email_validator==2.2.0
 fastapi==0.115.12
+gunicorn==23.0.0
 h11==0.16.0
 idna==3.10
 numpy==2.2.5
+opencv-python==4.11.0.86
+packaging==25.0
 pandas==2.2.3
-pillow==11.2.1
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
 pydantic==2.11.4
@@ -20,7 +22,6 @@ pydantic_core==2.33.2
 python-dateutil==2.9.0.post0
 python-multipart==0.0.20
 pytz==2025.2
-pyzbar==0.1.9
 requests==2.32.3
 setuptools==80.3.1
 six==1.17.0
@@ -32,4 +33,3 @@ tzdata==2025.2
 urllib3==2.4.0
 uvicorn==0.34.2
 gunicorn==23.0.0
-pyzbar==0.1.9

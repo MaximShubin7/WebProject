@@ -1,10 +1,9 @@
 from fastapi import FastAPI, HTTPException, status, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image, UnidentifiedImageError
+import numpy as np
 import uvicorn
 import bcrypt
-import io
 
 from Comment import CommentCreate, CommentUpdate
 from CommentsTable import CommentsTable
@@ -266,20 +265,18 @@ async def get_bonus(user: UserResponse, code: str, qr_code_image: UploadFile = F
     if user.phone_number is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The user does not have a phone number")
     try:
-        img = Image.open(io.BytesIO(qr_code_image))
-        if img is None:
+        contents = await qr_code_image.read()
+        image_np = np.frombuffer(contents, np.uint8)
+        image_np = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+        if image_np is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file")
         parser = UseParserReceipt()
-        parser.add_bonus(user, code, img)
-    except (UnidentifiedImageError, IOError):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The file is not a valid image")
+        parser.add_bonus(user, code, image_np)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The file is not a valid image")
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content="Success"
     )
-
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="localhost", port=4000)
