@@ -1,5 +1,6 @@
 from typing import Optional
 from uuid import UUID
+
 from Address import AddressCreate, AddressUpdate, AddressResponse
 
 
@@ -11,15 +12,11 @@ class AddressesTable:
         with self.connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO addresses (
-                    country, region, city, street, house_number, 
-                    building, floor, postal_code, latitude, longitude
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO addresses (address, latitude, longitude)
+                VALUES (%s, %s, %s)
                 RETURNING address_id
                 """,
-                (address.country, address.region, address.city, address.street, address.house_number,
-                 address.building, address.floor, address.postal_code, address.latitude, address.longitude))
+                (address.address, address.latitude, address.longitude))
             address_id = cursor.fetchone()[0]
             self.connection.commit()
             return address_id
@@ -30,9 +27,10 @@ class AddressesTable:
                 "SELECT * FROM addresses WHERE address_id = %s",
                 (address_id,))
             result = cursor.fetchone()
+
             if result:
                 columns = [desc[0] for desc in cursor.description]
-                return AddressResponse(zip(columns, result))
+                return AddressResponse(**dict(zip(columns, result)))
             return None
 
     def update_address(self, address: AddressUpdate) -> bool:
@@ -44,13 +42,11 @@ class AddressesTable:
             if field != "address_id" and value is not None:
                 updates.append(f"{field} = %s")
                 params.append(value)
-
         if not updates:
             return False
 
         params.append(address.address_id)
         query = f"UPDATE addresses SET {', '.join(updates)} WHERE address_id = %s"
-
         with self.connection.cursor() as cursor:
             cursor.execute(query, params)
             self.connection.commit()

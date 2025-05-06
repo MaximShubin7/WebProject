@@ -1,7 +1,12 @@
-import json
-import requests
-import cv2
+from typing import Optional
 from pyzbar.pyzbar import decode
+from PIL import Image
+import requests
+
+from ConnectDataBase import get_db_connection
+from QRCode import QRCodesTable
+from User import UserResponse
+from UsersTable import UsersTable
 
 
 class ParserReceiptQRCodeToData:
@@ -16,13 +21,11 @@ class ParserReceiptQRCodeToData:
 
     def __init__(self):
         self.session_id = None
-        self.set_session_id()
 
-    def set_session_id(self) -> None:
-        self.phone_number = input('Input phone in +70000000000 format: ')
+    def set_session_id(self, phone_number: str) -> None:
         url = f'https://{self.HOST}/v2/auth/phone/request'
         payload = {
-            'phone': self.phone_number,
+            'phone': phone_number,
             'client_secret': self.CLIENT_SECRET,
             'os': self.DEVICE_OS
         }
@@ -37,24 +40,13 @@ class ParserReceiptQRCodeToData:
         }
         response = requests.post(url, json=payload, headers=headers)
 
-        self.code = input('Input code from SMS: ')
+    def verify_session_id(self, phone_number: str, code: str):
         url = f'https://{self.HOST}/v2/auth/phone/verify'
         payload = {
-            'phone': self.phone_number,
+            'phone': phone_number,
             'client_secret': self.CLIENT_SECRET,
-            'code': self.code,
+            'code': code,
             "os": self.DEVICE_OS
-        }
-        response = requests.post(url, json=payload, headers=headers)
-
-        self.session_id = response.json()['sessionId']
-        self.refresh_token = response.json()['refresh_token']
-
-    def refresh_token_function(self) -> None:
-        url = f'https://{self.HOST}/v2/mobile/users/refresh'
-        payload = {
-            'refresh_token': self.refresh_token,
-            'client_secret': self.CLIENT_SECRET
         }
         headers = {
             'Host': self.HOST,
@@ -66,9 +58,7 @@ class ParserReceiptQRCodeToData:
             'User-Agent': self.USER_AGENT,
         }
         response = requests.post(url, json=payload, headers=headers)
-
         self.session_id = response.json()['sessionId']
-        self.refresh_token = response.json()['refresh_token']
 
     def get_ticket_id(self, qr: str) -> str:
         url = f'https://{self.HOST}/v2/ticket'
@@ -101,11 +91,10 @@ class ParserReceiptQRCodeToData:
             'Content-Type': 'application/json'
         }
         response = requests.get(url, headers=headers)
-        return response.json()
+        return response.json()["ticket"]
 
-    def decode_qr_code(self, image_path: str) -> str:
+    def decode_qr_code(self, image: Image) -> Optional[str]:
         try:
-            image = cv2.imread(image_path)
             decoded_objects = decode(image)
             for obj in decoded_objects:
                 return obj.data.decode("utf-8")
@@ -113,8 +102,30 @@ class ParserReceiptQRCodeToData:
             print(f"Ошибка: {e}")
 
 
-if __name__ == '__main__':
-    client = ParserReceiptQRCodeToData()
-    qr_code = client.decode_qr_code("path")
-    ticket = client.get_ticket(qr_code)
-    print(json.dumps(ticket, indent=4, ensure_ascii=False))
+class UseParserReceipt:
+    def request_session_id(self, user: UserResponse):
+        client = ParserReceiptQRCodeToData()
+        client.set_session_id(user.phone_number)
+
+    def add_bonus(self, user: UserResponse, code: str, qr_code_image: Image):
+        try:
+            client = ParserReceiptQRCodeToData()
+            client.verify_session_id(user.phone_number, code)
+        except Exception:
+            raise ValueError("Invalid code")
+        try:
+            qr_code_data = client.decode_qr_code(qr_code_image)
+            repository = QRCodesTable(get_db_connection())
+            if repository.get_qr_code(qr_code_data) is not None:
+                raise ValueError("The QR code has already been read")
+
+            ticket = client.get_ticket(qr_code_data)
+            ticket_sum = ticket["document"]["receipt"]["totalSum"]
+            bonus = round(ticket_sum / 100 / 200, 2)
+            repository = UsersTable(get_db_connection())
+            repository.change_bonus(str(user.user_id), bonus)
+
+            repository = QRCodesTable(get_db_connection())
+            repository.add_qr_code(qr_code_data)
+        except Exception:
+            raise ValueError("Unknown error")

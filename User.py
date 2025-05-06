@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, validator, Field
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 import bcrypt
 
 
@@ -23,19 +23,21 @@ class UserValidator:
 
 
 class UserCreate(BaseModel, UserValidator):
-    name: Optional[str] = Field(None, min_length=2, max_length=25)
+    name: Optional[str] = None
     email: EmailStr
     password: str
     phone_number: Optional[str] = Field(None, pattern=r'^(\+7|7|8)\d{10}$')
-    qr_code: str = str(uuid4()) #заглушка, пока что
 
 
-class UserUpdate(BaseModel, UserValidator):
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserUpdate(UserCreate):
     user_id: UUID
-    name: Optional[str] = Field(None, min_length=2, max_length=25)
     email: Optional[EmailStr] = None
     password: Optional[str] = None
-    phone_number: Optional[str] = Field(None, pattern=r'^(\+7|7|8)\d{10}$')
 
 
 class UserResponse(BaseModel):
@@ -43,5 +45,4 @@ class UserResponse(BaseModel):
     name: Optional[str] = None
     email: EmailStr
     phone_number: Optional[str] = None
-    qr_code: str
     bonus: float

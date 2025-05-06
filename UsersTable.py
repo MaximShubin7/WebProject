@@ -12,16 +12,16 @@ class UsersTable:
         with self.connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO users (name, email, password, phone_number, qr_code)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO users (name, email, password, phone_number)
+                VALUES (%s, %s, %s, %s)
                 RETURNING user_id
                 """,
-                (user.name, user.email, user.password, user.phone_number, user.qr_code))
+                (user.name, user.email, user.password, user.phone_number))
             user_id = cursor.fetchone()[0]
             self.connection.commit()
             return user_id
 
-    def get_user(self, user_id: UUID) -> Optional[UserResponse]:
+    def get_user(self, user_id: str) -> Optional[UserResponse]:
         with self.connection.cursor() as cursor:
             cursor.execute(
                 "SELECT * FROM users WHERE user_id = %s",
@@ -29,7 +29,7 @@ class UsersTable:
             result = cursor.fetchone()
             if result:
                 columns = [desc[0] for desc in cursor.description]
-                return UserResponse(zip(columns, result))
+                return UserResponse(**dict(zip(columns, result)))
             return None
 
     def find_by_email(self, email: EmailStr) -> Optional[UserResponse]:
@@ -40,7 +40,7 @@ class UsersTable:
             result = cursor.fetchone()
             if result:
                 columns = [desc[0] for desc in cursor.description]
-                return UserResponse(zip(columns, result))
+                return UserResponse(**dict(zip(columns, result)))
             return None
 
     def get_user_password_by_email(self, email: EmailStr) -> Optional[str]:
@@ -77,5 +77,17 @@ class UsersTable:
             cursor.execute(
                 "DELETE FROM users WHERE user_id = %s",
                 (user_id,))
+            self.connection.commit()
+            return cursor.rowcount > 0
+
+    def change_bonus(self, user_id: str, bonus: float) -> bool:
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE users 
+                SET bonus = bonus + %s 
+                WHERE user_id = %s
+                """,
+                (bonus, user_id))
             self.connection.commit()
             return cursor.rowcount > 0

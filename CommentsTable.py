@@ -1,5 +1,6 @@
 from typing import Optional, List
 from uuid import UUID
+
 from Comment import CommentCreate, CommentUpdate, CommentResponse
 
 
@@ -26,12 +27,13 @@ class CommentsTable:
                 "SELECT * FROM comments WHERE comment_id = %s",
                 (comment_id,))
             result = cursor.fetchone()
+
             if result:
                 columns = [desc[0] for desc in cursor.description]
-                return CommentResponse(zip(columns, result))
+                return CommentResponse(**dict(zip(columns, result)))
             return None
 
-    def get_comments_by_establishment(self, establishment_id: str) -> List:
+    def get_comments_by_establishment(self, establishment_id: str) -> List[CommentResponse]:
         with self.connection.cursor() as cursor:
             cursor.execute(
                 """
@@ -43,7 +45,21 @@ class CommentsTable:
                 """,
                 (establishment_id,))
             columns = [desc[0] for desc in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+            return [CommentResponse(**dict(zip(columns, row))) for row in cursor.fetchall()]
+
+    def get_comments_by_user(self, user_id: str) -> List[CommentResponse]:
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT c.*, e.name as establishment_name,e.rating as establishment_rating
+                FROM comments c
+                JOIN establishments e ON c.establishment_id = e.establishment_id
+                WHERE c.user_id = %s
+                ORDER BY c.created_at DESC
+                """,
+                (user_id,))
+            columns = [desc[0] for desc in cursor.description]
+            return [CommentResponse(**dict(zip(columns, row))) for row in cursor.fetchall()]
 
     def update_comment(self, comment: CommentUpdate) -> bool:
         fields = comment.dict()
