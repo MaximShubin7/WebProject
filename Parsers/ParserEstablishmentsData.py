@@ -4,7 +4,6 @@ import psycopg2.extras
 
 from Classes.Address import AddressCreate
 from DataBase.AddressesTable import AddressesTable
-from DataBase.ConnectDataBase import get_db_connection
 from Classes.Establishment import EstablishmentCreate
 from DataBase.EstablishmentsTable import EstablishmentsTable
 
@@ -49,7 +48,7 @@ class ParserEstablishmentsData:
                            "longitude": longitude}
 
                 address_create = AddressCreate(**address)
-                address_repository = AddressesTable(get_db_connection())
+                address_repository = AddressesTable()
                 address_id = address_repository.add_address(address_create)
                 params["address_id"] = address_id
             if "rating" in params:
@@ -58,7 +57,7 @@ class ParserEstablishmentsData:
                 params["count_comment"] = int(establishment["count_comment"])
 
             establishment_create = EstablishmentCreate(**params)
-            establishment_repository = EstablishmentsTable(get_db_connection())
+            establishment_repository = EstablishmentsTable()
             establishment_repository.add_establishment(establishment_create)
 
 

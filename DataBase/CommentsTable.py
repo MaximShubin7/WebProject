@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from typing import Optional, List
 from uuid import UUID
 from sqlalchemy import Table, MetaData, select, insert, update, delete, join
-from sqlalchemy.exc import SQLAlchemyError
 
 from Classes.Comment import CommentCreate, CommentUpdate, CommentResponse
 from DataBase.ConnectDataBase import get_sqlalchemy_engine

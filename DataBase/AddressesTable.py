@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Optional
 from uuid import UUID
-from sqlalchemy import Table, MetaData, select, insert, update, delete, and_
+from sqlalchemy import Table, MetaData, select, insert, update, delete
 
 from Classes.Address import AddressCreate, AddressUpdate, AddressResponse
 from DataBase.ConnectDataBase import get_sqlalchemy_engine

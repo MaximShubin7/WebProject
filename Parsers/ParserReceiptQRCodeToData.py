@@ -115,17 +115,17 @@ class UseParserReceipt:
             raise ValueError("Invalid code")
         try:
             qr_code_data = client.decode_qr_code(image_np)
-            repository = QRCodesTable(get_db_connection())
+            repository = QRCodesTable()
             if repository.get_qr_code(qr_code_data) is not None:
                 raise ValueError("The QR code has already been read")
 
             ticket = client.get_ticket(qr_code_data)
             ticket_sum = ticket["document"]["receipt"]["totalSum"]
             bonus = round(ticket_sum / 100 / 200, 2)
-            repository = UsersTable(get_db_connection())
-            repository.change_bonus(str(user.user_id), bonus)
+            repository = UsersTable()
+            repository.change_bonus(user.user_id, bonus)
 
-            repository = QRCodesTable(get_db_connection())
+            repository = QRCodesTable()
             repository.add_qr_code(qr_code_data)
         except Exception:
             raise ValueError("Unknown error")
