@@ -12,7 +12,6 @@ from DataBase.EstablishmentsTable import EstablishmentsTable
 from Parsers.ParserReceiptQRCodeToData import UseParserReceipt
 from Classes.User import UserCreate, UserLogin, UserResponse, UserUpdate
 from DataBase.UsersTable import UsersTable
-from test import repository
 
 app = FastAPI()
 
