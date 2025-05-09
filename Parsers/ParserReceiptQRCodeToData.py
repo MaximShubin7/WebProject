@@ -3,7 +3,6 @@ import numpy as np
 import requests
 import cv2
 
-from DataBase.ConnectDataBase import get_db_connection
 from DataBase.QRCodesTable import QRCodesTable
 from Classes.User import UserResponse
 from DataBase.UsersTable import UsersTable
