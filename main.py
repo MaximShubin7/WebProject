@@ -5,14 +5,14 @@ import numpy as np
 import uvicorn
 import bcrypt
 
-from Comment import CommentCreate, CommentUpdate
-from CommentsTable import CommentsTable
-from ConnectDataBase import get_db_connection
-from Establishment import EstablishmentCreate, EstablishmentUpdate
-from EstablishmentsTable import EstablishmentsTable
-from ParserReceiptQRCodeToData import UseParserReceipt
-from User import UserCreate, UserLogin, UserResponse, UserUpdate
-from UsersTable import UsersTable
+from Classes.Comment import CommentCreate, CommentUpdate
+from DataBase.CommentsTable import CommentsTable
+from Classes.Establishment import EstablishmentCreate, EstablishmentUpdate
+from DataBase.EstablishmentsTable import EstablishmentsTable
+from Parsers.ParserReceiptQRCodeToData import UseParserReceipt
+from Classes.User import UserCreate, UserLogin, UserResponse, UserUpdate
+from DataBase.UsersTable import UsersTable
+from test import repository
 
 app = FastAPI()
 
@@ -27,7 +27,7 @@ app.add_middleware(
 
 @app.post("/users/register")
 async def register(user: UserCreate):
-    repository = UsersTable(get_db_connection())
+    repository = UsersTable()
     if repository.find_by_email(user.email) is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -36,13 +36,13 @@ async def register(user: UserCreate):
     user_id = repository.add_user(user)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
-        content=repository.get_user(str(user_id)).model_dump(mode='json')
+        content=repository.get_user(user_id).model_dump(mode='json')
     )
 
 
 @app.post("/users/login")
 async def login(user: UserLogin):
-    repository = UsersTable(get_db_connection())
+    repository = UsersTable()
     finded_user = repository.find_by_email(user.email)
     if (finded_user is None or
             not bcrypt.checkpw(user.password, repository.get_user_password_by_email(user.email))):
@@ -58,7 +58,7 @@ async def login(user: UserLogin):
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: str):
-    repository = UsersTable(get_db_connection())
+    repository = UsersTable()
     finded_user = repository.get_user(user_id)
     if finded_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -70,21 +70,21 @@ async def get_user(user_id: str):
 
 @app.patch("/users/update-user/")
 async def update_user(user: UserUpdate):
-    repository = UsersTable(get_db_connection())
-    finded_user = repository.get_user(str(user.user_id))
+    repository = UsersTable()
+    finded_user = repository.get_user(user.user_id)
     if finded_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if not repository.update_user(user):
         raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="No changes")
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=repository.get_user(str(user.user_id)).model_dump(mode='json')
+        content=repository.get_user(user.user_id).model_dump(mode='json')
     )
 
 
 @app.delete("/users/delete-user/{user_id}")
 async def delete_user(user_id: str):
-    repository = UsersTable(get_db_connection())
+    repository = UsersTable()
     finded_user = repository.get_user(user_id)
     if finded_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -97,7 +97,7 @@ async def delete_user(user_id: str):
 
 @app.post("/establishments/create-establishment")
 async def create_establishment(establishment: EstablishmentCreate):
-    repository = EstablishmentsTable(get_db_connection())
+    repository = EstablishmentsTable()
     repository.add_establishment(establishment)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
@@ -107,7 +107,7 @@ async def create_establishment(establishment: EstablishmentCreate):
 
 @app.get("/establishments")
 async def get_all_establishments():
-    repository = EstablishmentsTable(get_db_connection())
+    repository = EstablishmentsTable()
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=[establishment.model_dump(mode='json') for establishment in repository.get_all_establishments()]
@@ -116,7 +116,7 @@ async def get_all_establishments():
 
 @app.get("/establishments/{establishment_id}")
 async def get_establishment(establishment_id: str):
-    repository = EstablishmentsTable(get_db_connection())
+    repository = EstablishmentsTable()
     finded_establishment = repository.get_establishment(establishment_id)
     if finded_establishment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Establishment not found")
@@ -128,21 +128,21 @@ async def get_establishment(establishment_id: str):
 
 @app.patch("/establishments/update-establishment/")
 async def update_establishment(establishment: EstablishmentUpdate):
-    repository = EstablishmentsTable(get_db_connection())
-    finded_establishment = repository.get_establishment(str(establishment.establishment_id))
+    repository = EstablishmentsTable()
+    finded_establishment = repository.get_establishment(establishment.establishment_id)
     if finded_establishment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Establishment not found")
     if not repository.update_establishment(establishment):
         raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="No changes")
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=repository.get_establishment(str(establishment.establishment_id)).model_dump(mode='json')
+        content=repository.get_establishment(establishment.establishment_id).model_dump(mode='json')
     )
 
 
 @app.delete("/establishments/delete-establishment/{establishment_id}", response_model=UserResponse)
 async def delete_establishment(establishment_id: str):
-    repository = EstablishmentsTable(get_db_connection())
+    repository = EstablishmentsTable()
     finded_establishment = repository.get_establishment(establishment_id)
     if finded_establishment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Establishment not found")
@@ -155,10 +155,10 @@ async def delete_establishment(establishment_id: str):
 
 @app.post("/comments/create-comment")
 async def create_comment(comment: CommentCreate):
-    repository_comments = CommentsTable(get_db_connection())
+    repository_comments = CommentsTable()
     repository_comments.add_comment(comment)
-    repository_establishments = EstablishmentsTable(get_db_connection())
-    repository_establishments.increment_comment_count(str(comment.establishment_id))
+    repository_establishments = EstablishmentsTable()
+    repository_establishments.increment_comment_count(comment.establishment_id)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content="Success"
@@ -167,7 +167,7 @@ async def create_comment(comment: CommentCreate):
 
 @app.get("/comments/{comment_id}")
 async def get_comment(comment_id: str):
-    repository = CommentsTable(get_db_connection())
+    repository = CommentsTable()
     finded_comment = repository.get_comment(comment_id)
     if finded_comment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
@@ -179,8 +179,8 @@ async def get_comment(comment_id: str):
 
 @app.get("/comments/establishments/{establishment_id}")
 async def get_comments_establishment(establishment_id: str):
-    repository_comments = CommentsTable(get_db_connection())
-    repository_establishments = EstablishmentsTable(get_db_connection())
+    repository_comments = CommentsTable()
+    repository_establishments = EstablishmentsTable()
     finded_establishment = repository_establishments.get_establishment(establishment_id)
     if finded_establishment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Establishment not found")
@@ -193,8 +193,8 @@ async def get_comments_establishment(establishment_id: str):
 
 @app.get("/comments/users/{user_id}")
 async def get_comments_user(user_id: str):
-    repository_comments = CommentsTable(get_db_connection())
-    repository_users = UsersTable(get_db_connection())
+    repository_comments = CommentsTable()
+    repository_users = UsersTable()
     finded_user = repository_users.get_user(user_id)
     if finded_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -207,21 +207,21 @@ async def get_comments_user(user_id: str):
 
 @app.patch("/comments/update-comment/")
 async def update_establishment(comment: CommentUpdate):
-    repository = CommentsTable(get_db_connection())
-    finded_comment = repository.get_comment(str(comment.comment_id))
+    repository = CommentsTable()
+    finded_comment = repository.get_comment(comment.comment_id)
     if finded_comment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
     if not repository.update_comment(comment):
         raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="No changes")
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=repository.get_comment(str(comment.comment_id)).model_dump(mode='json')
+        content=repository.get_comment(comment.comment_id).model_dump(mode='json')
     )
 
 
-@app.delete("/comments/delete-comment/{comment_id}", response_model=UserResponse)
+@app.delete("/comments/delete-comment/{comment_id}")
 async def delete_comment(comment_id: str):
-    repository = CommentsTable(get_db_connection())
+    repository = CommentsTable()
     finded_comment = repository.get_comment(comment_id)
     if finded_comment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
@@ -232,20 +232,7 @@ async def delete_comment(comment_id: str):
     )
 
 
-@app.delete("/comments/delete-comment/{comment_id}", response_model=UserResponse)
-async def delete_comment(comment_id: str):
-    repository = CommentsTable(get_db_connection())
-    finded_comment = repository.get_comment(comment_id)
-    if finded_comment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
-    repository.delete_comment(comment_id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content="Success"
-    )
-
-
-@app.post("/users/get-bonus", response_model=UserResponse)
+@app.post("/users/get-bonus")
 async def request_session(user: UserResponse):
     if user.phone_number is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The user does not have a phone number")
@@ -276,6 +263,18 @@ async def get_bonus(user: UserResponse, code: str, qr_code_image: UploadFile = F
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The file is not a valid image")
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content="Success"
+    )
+
+
+@app.post("/users/buy-promo")
+async def buy_promo(user: UserResponse, price: float):
+    if user.bonus < price:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You don't have enough bonuses")
+    repository = UsersTable()
+    repository.change_bonus(user.user_id, -price)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content="Success"

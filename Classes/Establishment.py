@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from uuid import UUID
 
-from Address import AddressResponse, AddressCreate, AddressUpdate
+from Classes.Address import AddressResponse, AddressCreate, AddressUpdate
 
 
 class EstablishmentCreate(BaseModel):

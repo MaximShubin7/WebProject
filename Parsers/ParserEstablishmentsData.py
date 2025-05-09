@@ -2,11 +2,11 @@ import pandas
 import requests
 import psycopg2.extras
 
-from Address import AddressCreate
-from AddressesTable import AddressesTable
-from ConnectDataBase import get_db_connection
-from Establishment import EstablishmentCreate
-from EstablishmentsTable import EstablishmentsTable
+from Classes.Address import AddressCreate
+from DataBase.AddressesTable import AddressesTable
+from DataBase.ConnectDataBase import get_db_connection
+from Classes.Establishment import EstablishmentCreate
+from DataBase.EstablishmentsTable import EstablishmentsTable
 
 psycopg2.extras.register_uuid()
 
