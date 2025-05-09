@@ -25,7 +25,7 @@ app.add_middleware(
 
 
 @app.post("/users/register")
-async def register(user: UserCreate):
+def register(user: UserCreate):
     repository = UsersTable()
     if repository.find_by_email(user.email) is not None:
         raise HTTPException(
@@ -40,7 +40,7 @@ async def register(user: UserCreate):
 
 
 @app.post("/users/login")
-async def login(user: UserLogin):
+def login(user: UserLogin):
     repository = UsersTable()
     finded_user = repository.find_by_email(user.email)
     if (finded_user is None or
@@ -56,7 +56,7 @@ async def login(user: UserLogin):
 
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: str):
+def get_user(user_id: str):
     repository = UsersTable()
     finded_user = repository.get_user(user_id)
     if finded_user is None:
@@ -68,7 +68,7 @@ async def get_user(user_id: str):
 
 
 @app.patch("/users/update-user/")
-async def update_user(user: UserUpdate):
+def update_user(user: UserUpdate):
     repository = UsersTable()
     finded_user = repository.get_user(user.user_id)
     if finded_user is None:
@@ -82,7 +82,7 @@ async def update_user(user: UserUpdate):
 
 
 @app.delete("/users/delete-user/{user_id}")
-async def delete_user(user_id: str):
+def delete_user(user_id: str):
     repository = UsersTable()
     finded_user = repository.get_user(user_id)
     if finded_user is None:
@@ -95,7 +95,7 @@ async def delete_user(user_id: str):
 
 
 @app.post("/establishments/create-establishment")
-async def create_establishment(establishment: EstablishmentCreate):
+def create_establishment(establishment: EstablishmentCreate):
     repository = EstablishmentsTable()
     repository.add_establishment(establishment)
     return JSONResponse(
@@ -105,7 +105,7 @@ async def create_establishment(establishment: EstablishmentCreate):
 
 
 @app.get("/establishments")
-async def get_all_establishments():
+def get_all_establishments():
     repository = EstablishmentsTable()
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -114,7 +114,7 @@ async def get_all_establishments():
 
 
 @app.get("/establishments/{establishment_id}")
-async def get_establishment(establishment_id: str):
+def get_establishment(establishment_id: str):
     repository = EstablishmentsTable()
     finded_establishment = repository.get_establishment(establishment_id)
     if finded_establishment is None:
@@ -126,7 +126,7 @@ async def get_establishment(establishment_id: str):
 
 
 @app.patch("/establishments/update-establishment/")
-async def update_establishment(establishment: EstablishmentUpdate):
+def update_establishment(establishment: EstablishmentUpdate):
     repository = EstablishmentsTable()
     finded_establishment = repository.get_establishment(establishment.establishment_id)
     if finded_establishment is None:
@@ -140,7 +140,7 @@ async def update_establishment(establishment: EstablishmentUpdate):
 
 
 @app.delete("/establishments/delete-establishment/{establishment_id}", response_model=UserResponse)
-async def delete_establishment(establishment_id: str):
+def delete_establishment(establishment_id: str):
     repository = EstablishmentsTable()
     finded_establishment = repository.get_establishment(establishment_id)
     if finded_establishment is None:
@@ -153,7 +153,7 @@ async def delete_establishment(establishment_id: str):
 
 
 @app.post("/comments/create-comment")
-async def create_comment(comment: CommentCreate):
+def create_comment(comment: CommentCreate):
     repository_comments = CommentsTable()
     repository_comments.add_comment(comment)
     repository_establishments = EstablishmentsTable()
@@ -165,7 +165,7 @@ async def create_comment(comment: CommentCreate):
 
 
 @app.get("/comments/{comment_id}")
-async def get_comment(comment_id: str):
+def get_comment(comment_id: str):
     repository = CommentsTable()
     finded_comment = repository.get_comment(comment_id)
     if finded_comment is None:
@@ -177,7 +177,7 @@ async def get_comment(comment_id: str):
 
 
 @app.get("/comments/establishments/{establishment_id}")
-async def get_comments_establishment(establishment_id: str):
+def get_comments_establishment(establishment_id: str):
     repository_comments = CommentsTable()
     repository_establishments = EstablishmentsTable()
     finded_establishment = repository_establishments.get_establishment(establishment_id)
@@ -191,7 +191,7 @@ async def get_comments_establishment(establishment_id: str):
 
 
 @app.get("/comments/users/{user_id}")
-async def get_comments_user(user_id: str):
+def get_comments_user(user_id: str):
     repository_comments = CommentsTable()
     repository_users = UsersTable()
     finded_user = repository_users.get_user(user_id)
@@ -205,7 +205,7 @@ async def get_comments_user(user_id: str):
 
 
 @app.patch("/comments/update-comment/")
-async def update_establishment(comment: CommentUpdate):
+def update_establishment(comment: CommentUpdate):
     repository = CommentsTable()
     finded_comment = repository.get_comment(comment.comment_id)
     if finded_comment is None:
@@ -219,7 +219,7 @@ async def update_establishment(comment: CommentUpdate):
 
 
 @app.delete("/comments/delete-comment/{comment_id}")
-async def delete_comment(comment_id: str):
+def delete_comment(comment_id: str):
     repository = CommentsTable()
     finded_comment = repository.get_comment(comment_id)
     if finded_comment is None:
@@ -232,7 +232,7 @@ async def delete_comment(comment_id: str):
 
 
 @app.post("/users/get-bonus")
-async def request_session(user: UserResponse):
+def request_session(user: UserResponse):
     if user.phone_number is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The user does not have a phone number")
     try:
@@ -247,11 +247,11 @@ async def request_session(user: UserResponse):
 
 
 @app.post("/users/verify-bonus")
-async def get_bonus(user: UserResponse, code: str, qr_code_image: UploadFile = File(...)):
+def get_bonus(user: UserResponse, code: str, qr_code_image: UploadFile = File(...)):
     if user.phone_number is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The user does not have a phone number")
     try:
-        contents = await qr_code_image.read()
+        contents = qr_code_image.read()
         image_np = np.frombuffer(contents, np.uint8)
         image_np = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
         if image_np is None:
@@ -269,7 +269,7 @@ async def get_bonus(user: UserResponse, code: str, qr_code_image: UploadFile = F
 
 
 @app.post("/users/buy-promo")
-async def buy_promo(user: UserResponse, price: float):
+def buy_promo(user: UserResponse, price: float):
     if user.bonus < price:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You don't have enough bonuses")
     repository = UsersTable()

@@ -13,6 +13,6 @@ def get_sqlalchemy_engine():
         max_overflow=20,
         pool_pre_ping=True,
         connect_args={
-            "sslmode": "prefer"
+            "sslmode": "require"
         }
     )

@@ -5,8 +5,8 @@ from uuid import UUID
 
 class AddressCreate(BaseModel):
     address: str
-    latitude: float = Field(..., ge=0, le=90)
-    longitude: float = Field(..., ge=0, le=180)
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
 
 
 class AddressUpdate(BaseModel):
