@@ -44,7 +44,8 @@ def login(user: UserLogin):
     repository = UsersTable()
     finded_user = repository.find_by_email(user.email)
     if (finded_user is None or
-            not bcrypt.checkpw(user.password, repository.get_user_password_by_email(user.email))):
+            not bcrypt.checkpw(user.password.encode('utf-8'),
+                               repository.get_user_password_by_email(user.email).encode('utf-8'))):
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
