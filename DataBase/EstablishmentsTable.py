@@ -51,7 +51,7 @@ class EstablishmentsTable:
             establishment_id = result.scalar_one()
             return establishment_id
 
-    def get_all_establishments(self,filters: FilterEstablishments) -> Optional[List[EstablishmentAddressResponse]]:
+    def get_all_establishments(self, filters: FilterEstablishments) -> Optional[List[EstablishmentAddressResponse]]:
         j = join(
             self.establishments,
             self.addresses,
