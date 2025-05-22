@@ -1,9 +1,10 @@
 from contextlib import contextmanager
 from typing import Optional, List
 from uuid import UUID
-from sqlalchemy import Table, MetaData, select, insert, update, delete, join
+from sqlalchemy import Table, MetaData, select, insert, update, delete, join, and_
 
 from Classes.Address import AddressResponse
+from Classes.FilterEstablishments import FilterEstablishments
 from DataBase.AddressesTable import AddressesTable
 from Classes.Establishment import EstablishmentCreate, EstablishmentUpdate, EstablishmentResponse, \
     EstablishmentAddressResponse
@@ -50,21 +51,40 @@ class EstablishmentsTable:
             establishment_id = result.scalar_one()
             return establishment_id
 
-    def get_all_establishments(self) -> Optional[List[EstablishmentAddressResponse]]:
+    def get_all_establishments(self,filters: FilterEstablishments) -> Optional[List[EstablishmentAddressResponse]]:
         j = join(
             self.establishments,
             self.addresses,
             self.establishments.c.address_id == self.addresses.c.address_id
         )
 
-        stmt = (select(
+        stmt = select(
             self.establishments.c.establishment_id,
             self.establishments.c.name,
             self.addresses.c.address_id,
             self.addresses.c.address,
             self.addresses.c.latitude,
-            self.addresses.c.longitude)
-                .select_from(j))
+            self.addresses.c.longitude
+        ).select_from(j)
+
+        conditions = []
+        if filters.name is not None:
+            conditions.append(self.establishments.c.name.ilike(f"%{filters.name}%"))
+        if filters.rating is not None:
+            conditions.append(self.establishments.c.rating >= filters.rating)
+        if filters.latitude is not None:
+            conditions.append(self.addresses.c.latitude.between(
+                filters.latitude - 0.005,
+                filters.latitude + 0.005
+            ))
+        if filters.longitude is not None:
+            conditions.append(self.addresses.c.longitude.between(
+                filters.longitude - 0.01,
+                filters.longitude + 0.01
+            ))
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
+
         with self.get_connection() as conn:
             results = conn.execute(stmt).fetchall()
 
