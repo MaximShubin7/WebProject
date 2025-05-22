@@ -6,6 +6,7 @@ import uvicorn
 import bcrypt
 
 from Classes.Comment import CommentCreate, CommentUpdate
+from Classes.FilterEstablishments import FilterEstablishments
 from DataBase.CommentsTable import CommentsTable
 from Classes.Establishment import EstablishmentCreate, EstablishmentUpdate
 from DataBase.EstablishmentsTable import EstablishmentsTable
@@ -106,11 +107,11 @@ def create_establishment(establishment: EstablishmentCreate):
 
 
 @app.get("/establishments")
-def get_all_establishments():
+def get_all_establishments(filters: FilterEstablishments):
     repository = EstablishmentsTable()
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=[establishment.model_dump(mode='json') for establishment in repository.get_all_establishments()]
+        content=[establishment.model_dump(mode='json') for establishment in repository.get_all_establishments(filters)]
     )
 
 
