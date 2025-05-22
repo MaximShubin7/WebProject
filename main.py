@@ -279,3 +279,11 @@ def buy_promo(user: UserResponse, price: float):
         status_code=status.HTTP_200_OK,
         content="Success"
     )
+
+@app.get("/api-key")
+def get_api_key_yandex_maps():
+    API_KEY_YANDEX_MAPS="22955a5e-740a-4850-8379-1439a844b941"
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=API_KEY_YANDEX_MAPS
+    )
