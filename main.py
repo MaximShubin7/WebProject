@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import FastAPI, HTTPException, status, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,9 +9,11 @@ import bcrypt
 
 from Classes.Comment import CommentCreate, CommentUpdate
 from Classes.FilterEstablishments import FilterEstablishments
+from Classes.Stock import StockCreate, StockResponse
 from DataBase.CommentsTable import CommentsTable
 from Classes.Establishment import EstablishmentCreate, EstablishmentUpdate
 from DataBase.EstablishmentsTable import EstablishmentsTable
+from DataBase.StocksTable import StocksTable
 from Parsers.ParserReceiptQRCodeToData import UseParserReceipt
 from Classes.User import UserCreate, UserLogin, UserResponse, UserUpdate
 from DataBase.UsersTable import UsersTable
@@ -281,10 +285,56 @@ def buy_promo(user: UserResponse, price: float):
         content="Success"
     )
 
+
 @app.get("/api-key")
 def get_api_key_yandex_maps():
-    API_KEY_YANDEX_MAPS="22955a5e-740a-4850-8379-1439a844b941"
+    API_KEY_YANDEX_MAPS = "22955a5e-740a-4850-8379-1439a844b941"
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=API_KEY_YANDEX_MAPS
+    )
+
+
+@app.post("/stocks/create-stock")
+def create_stock(stock: StockCreate) -> StockResponse:
+    repository = StocksTable()
+    repository.add_stock(stock)
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content="Success"
+    )
+
+
+@app.get("/stocks/")
+def get_all_stocks():
+    repository = StocksTable()
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=repository.get_all_stocks()
+    )
+
+
+@app.get("/stocks/{stock_id}")
+def get_stock(stock_id: UUID) -> StockResponse:
+    repository = StocksTable()
+    stock = repository.get_stock(stock_id)
+    if not stock:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Stock not found"
+        )
+    return stock
+
+
+@app.delete("/stocks/{stock_id}")
+def delete_stock(stock_id: UUID) -> None:
+    repository = StocksTable()
+    if not repository.delete_stock(stock_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Stock not found"
+        )
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=repository.get_all_stocks()
     )
