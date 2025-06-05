@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, status, UploadFile, File
@@ -306,27 +307,30 @@ def create_stock(stock: StockCreate) -> StockResponse:
 
 
 @app.get("/stocks/")
-def get_all_stocks():
+def get_all_stocks() -> List[StockResponse]:
     repository = StocksTable()
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=repository.get_all_stocks()
+        content=[stock.model_dump(mode='json') for stock in repository.get_all_stocks()]
     )
 
 
 @app.get("/stocks/{stock_id}")
 def get_stock(stock_id: UUID) -> StockResponse:
     repository = StocksTable()
-    stock = repository.get_stock(stock_id)
-    if not stock:
+    finded_stock = repository.get_stock(stock_id)
+    if not finded_stock:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Stock not found"
         )
-    return stock
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=finded_stock.model_dump(mode='json')
+    )
 
 
-@app.delete("/stocks/{stock_id}")
+@app.delete("/stocks/delete-stock/{stock_id}")
 def delete_stock(stock_id: UUID) -> None:
     repository = StocksTable()
     if not repository.delete_stock(stock_id):
@@ -336,5 +340,5 @@ def delete_stock(stock_id: UUID) -> None:
         )
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=repository.get_all_stocks()
+        content="Success"
     )
